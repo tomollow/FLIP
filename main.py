@@ -53,7 +53,7 @@ def main():
         st.success("データがエンベッディングされ、ベクトルデータベースが更新されました。")
 
     # UI周り
-    st.title("QA")
+    st.title("FLIPナレッジデータベース")
     with st.sidebar:
         uploaded_file = st.file_uploader("Upload a file", type=["csv", "pdf", "md"])
         if uploaded_file:
