@@ -28,7 +28,7 @@ def main():
     os.environ['OPENAI_API_KEY'] = user_api_key
 
     # モデルの選択と設定
-    select_model = st.sidebar.selectbox("Model", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"])
+    select_model = st.sidebar.selectbox("Model", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview", "gpt-4-turbo", "gpt-4o-mini", "gpt-4o"])
     select_temperature = st.sidebar.slider("Temperature", min_value=0.0, max_value=2.0, value=0.0, step=0.1)
     select_chunk_size = st.sidebar.slider("Chunk Size", min_value=0.0, max_value=1000.0, value=300.0, step=10.0)
 
