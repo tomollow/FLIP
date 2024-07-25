@@ -23,7 +23,7 @@ def main():
     ASSISTANT_NAME = "assistant"
 
     # OpenAI APIキーの設定
-    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+    #os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
     # Chromaデータベースの設定
     CHROMA_PERSIST_DIR = "persistent_storage"
