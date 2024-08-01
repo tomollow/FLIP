@@ -55,7 +55,7 @@ def main():
         
         text_splitter = CharacterTextSplitter(
             chunk_size=select_chunk_size, 
-            chunk_overlap=0
+            chunk_overlap=select_temperature
             )
         texts = text_splitter.split_documents(documents)
         
