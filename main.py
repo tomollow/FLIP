@@ -10,6 +10,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
+from langchain import PromptTemplate
 from openai import OpenAI
 import tempfile
 
@@ -28,9 +29,18 @@ def main():
     os.environ['OPENAI_API_KEY'] = user_api_key
 
     # モデルの選択と設定
-    select_model = st.sidebar.selectbox("Model", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview", "gpt-4-turbo", "gpt-4o-mini", "gpt-4o"])
-    select_temperature = st.sidebar.slider("Temperature", min_value=0.0, max_value=2.0, value=0.0, step=0.1)
-    select_chunk_size = st.sidebar.slider("Chunk Size", min_value=0.0, max_value=1000.0, value=300.0, step=10.0)
+    select_model = st.sidebar.selectbox(
+        "Model", [
+            "gpt-3.5-turbo-1106", 
+            "gpt-4-1106-preview", 
+            "gpt-4-turbo", 
+            "gpt-4o-mini", 
+            "gpt-4o"
+            ])
+    select_temperature = st.sidebar.slider(
+        "Temperature", min_value=0.0, max_value=2.0, value=0.0, step=0.1)
+    select_chunk_size = st.sidebar.slider(
+        "Chunk Size", min_value=0.0, max_value=1000.0, value=500.0, step=10.0)
 
     # データの読み込みとベクトル化
     def load_and_embed_data(file_path, file_ext):
@@ -43,11 +53,19 @@ def main():
             loader = UnstructuredMarkdownLoader(file_path)
         documents = loader.load()
         
-        text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+        text_splitter = CharacterTextSplitter(
+            chunk_size=select_chunk_size, 
+            chunk_overlap=0
+            )
         texts = text_splitter.split_documents(documents)
         
-        embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
-        database = Chroma(persist_directory=CHROMA_PERSIST_DIR, embedding_function=embeddings)
+        embeddings = OpenAIEmbeddings(
+            model="text-embedding-ada-002"
+            )
+        database = Chroma(
+            persist_directory=CHROMA_PERSIST_DIR, 
+            embedding_function=embeddings
+            )
         database.add_documents(texts)
 
         st.success("データがエンベッディングされ、ベクトルデータベースが更新されました。")
@@ -55,7 +73,10 @@ def main():
     # UI周り
     st.title("FLIPナレッジデータベース")
     with st.sidebar:
-        uploaded_file = st.file_uploader("Upload a file", type=["csv", "pdf", "md"])
+        uploaded_file = st.file_uploader(
+            "Upload a file", 
+            type=["csv", "pdf", "md"]
+            )
         if uploaded_file:
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 tmp_file.write(uploaded_file.getvalue())
@@ -64,13 +85,39 @@ def main():
 
             if st.button("エンベッディングを実行"):
                 load_and_embed_data(tmp_file_path, tmp_file_ext)
-    
+
+    prompt_template_qa = """あなたは親切で優しいアシスタントです。丁寧に、日本語でお答えください！
+    もし以下の情報が探している情報に関連していない場合は、そのトピックに関する自身の知識を用いて質問
+    に答えてください。
+
+    {context}
+
+    質問: {question}
+    回答（日本語）:"""
+
+    prompt_qa = PromptTemplate(
+            template=prompt_template_qa, 
+            input_variables=["context", "question"]
+    )
+    chain_type_kwargs = {"prompt": prompt_qa}
+
     # クエリの処理
     def query_data(query):
         embeddings = OpenAIEmbeddings()
-        vectorstore = Chroma(persist_directory=CHROMA_PERSIST_DIR, embedding_function=embeddings)
-        llm = ChatOpenAI(model_name=select_model, temperature=select_temperature)
-        qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vectorstore.as_retriever())
+        vectorstore = Chroma(
+            persist_directory=CHROMA_PERSIST_DIR, 
+            embedding_function=embeddings
+            )
+        llm = ChatOpenAI(
+            model_name=select_model, 
+            temperature=select_temperature
+            )
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm, 
+            chain_type="stuff", 
+            retriever=vectorstore.as_retriever(),
+            chain_type_kwargs=chain_type_kwargs
+            )
         response = qa_chain.run(query)
         return response
 
